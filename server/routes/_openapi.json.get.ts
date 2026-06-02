@@ -1,6 +1,7 @@
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event);
-  const hubOpenAPI = await $fetch("/api/_hub/openapi.json").catch(() => null);
+  const hubOpenAPI = await $fetch("/api/_hub/openapi.json").catch(() => null)
+    ?? await $fetch("/_nitro/openapi.json").catch(() => null);
   if (!hubOpenAPI) throw createError({ statusCode: 500 });
   const filteredPaths: Record<string, Record<string, any>> = {};
   for (const [path, methods] of Object.entries(hubOpenAPI.paths as Record<string, Record<string, any>>)) {

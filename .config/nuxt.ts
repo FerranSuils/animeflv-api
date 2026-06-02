@@ -1,5 +1,7 @@
 import { SITE } from "../shared/utils/helpers";
 
+const isCloudflare = (process.env.NITRO_PRESET || "").startsWith("cloudflare");
+
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-18",
   app: {
@@ -29,7 +31,7 @@ export default defineNuxtConfig({
     "~/assets/css/main.css"
   ],
   modules: [
-    "@nuxthub/core",
+    ...(isCloudflare ? ["@nuxthub/core"] : []),
     "@nuxt/eslint",
     "@scalar/nuxt"
   ],
@@ -54,23 +56,29 @@ export default defineNuxtConfig({
   experimental: {
     typedPages: true
   },
-  hub: {
-    workers: true,
-    cache: true
-  },
+  ...(isCloudflare
+    ? { hub: { workers: true, cache: true } }
+    : {}),
   routeRules: {
-    "/": { prerender: true },
-    "/_openapi.json": { prerender: true },
+    ...(isCloudflare
+      ? { "/": { prerender: true }, "/_openapi.json": { prerender: true } }
+      : {}),
     "/api/*/**": { headers: { "Access-Control-Allow-Origin": "*" } },
     "/api": { redirect: { to: "/", statusCode: 301 } },
     "/docs": { redirect: { to: "/", statusCode: 301 } }
   },
   nitro: {
     prerender: {
-      crawlLinks: true
+      crawlLinks: isCloudflare,
+      ...(isCloudflare ? {} : { ignore: ["/_scalar", "/_swagger", "/_openapi.json", "/"] })
     },
     experimental: {
       openAPI: true
+    },
+    openAPI: {
+      production: "runtime",
+      route: "/_nitro/openapi.json",
+      ui: { scalar: false, swagger: false }
     }
   }
 });
